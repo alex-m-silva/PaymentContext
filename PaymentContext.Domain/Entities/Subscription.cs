@@ -1,12 +1,16 @@
-﻿using System;
+﻿using Flunt.Notifications;
+using Flunt.Validations;
+using PaymentContext.Shared.Entities;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace PaymentContext.Domain.Entities
 {
-    public class Subscription
+    public class Subscription : Entity
     {
         private IList<Payment> _payments;
         public Subscription(DateTime? expirationDate)
@@ -26,8 +30,18 @@ namespace PaymentContext.Domain.Entities
 
         public void AddPayment(Payment payment)
         {
-            if (payment == null)
-                throw new Exception("Pagamento Invalido");
+           AddNotifications(
+                 new Contract<Notification>()
+                .Requires()
+                .IsGreaterThan(payment.Total, 0, "Payment.Total", "Pagamento inválido")
+           );
+
+            AddNotifications(
+                  new Contract<Notification>()
+                 .Requires()
+                 .IsGreaterThan(DateTime.Now, payment.PaidDate, "subscription.Payments", "A adata de Pagamento deve ser futura")
+            );
+
             _payments.Add(payment);
         }
         public void Activate()
